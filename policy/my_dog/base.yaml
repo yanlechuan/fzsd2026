@@ -1,0 +1,74 @@
+# Copyright (c) 2024-201 Ziqi Fan
+# SPDX-License-Identifier: Apache-2.0
+
+my_dog:
+  dt: 0.001
+  decimation: 8
+  fixed_kp: [50.0, 50.0, 50.0,
+             50.0, 50.0, 50.0,
+             50.0, 50.0, 50.0,
+             50.0, 50.0, 50.0]
+  fixed_kd: [3.0, 3.0, 3.0,
+             3.0, 3.0, 3.0,
+             3.0, 3.0, 3.0,
+             3.0, 3.0, 3.0]
+  num_of_dofs: 12
+  wheel_indices: []
+  torque_limits: [168, 168, 168,
+                  168, 168, 168,
+                  168, 168, 168,
+                  168, 168, 168]
+  default_dof_pos: [ 0.00, 1.00, 0.80,
+                     -0.00, -1.00, -0.80,
+                     -0.00, 1.00, 0.90,
+                     0.00, -1.00, -0.90]
+  joint_names: ["FR_hip_joint", "FR_thigh_joint", "FR_calf_joint",
+                "FL_hip_joint", "FL_thigh_joint", "FL_calf_joint",
+                "RR_hip_joint", "RR_thigh_joint", "RR_calf_joint",
+                "RL_hip_joint", "RL_thigh_joint", "RL_calf_joint"]
+  joint_controller_names: ["FR_hip_controller", "FR_thigh_controller", "FR_calf_controller",
+                           "FL_hip_controller", "FL_thigh_controller", "FL_calf_controller",
+                           "RR_hip_controller", "RR_thigh_controller", "RR_calf_controller",
+                           "RL_hip_controller", "RL_thigh_controller", "RL_calf_controller"]
+  joint_mapping: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+  pitch_threshold: 60.0
+  roll_threshold: 60.0
+  custom_hip_angles: [-1.6, 1.6, 1.6, -1.6]
+  custom_thigh_angles: [0.1, 0, 0.1, 0]
+  calf_swing_min_angles: [0.0175, -0.0052, 0.0117, -0.0136]
+  calf_swing_max_angles: [1.4042, -1.4368, 1.4629, -1.3881]
+  calf_swing_period_seconds: 360
+  # Squat state parameters
+  squat_angle: 0.2            # 大腿旋转量 (rad)
+  squat_calf_angle: 0.24      # 小腿旋转量 (rad), 默认 = squat_angle, 小腿弧长为大腿1.2倍时设 0.3*1.2=0.36
+  squat_down_duration: 2.0
+  squat_hold_duration: 2.0
+  squat_stand_up_duration: 2.0
+
+  # 爬墙动作序列: 每步 = [duration, hold, pose0..11] 共14个float
+ 
+  climb_wall_sequence: [
+   
+   #2
+    0.20, 0.1,  0.00, 0.60, 0.40, -0.90, -0.60, -0.50, -0.90, 0.60, 0.50, 0.00, -0.60, -0.40,
+    0.20, 0.1,  0.00, 0.60, 0.40, -0.90, 0.1, -1.38, -0.90, 0, 1.38, 0.00, -0.60, -0.40,
+    0.20, 0.1,  0.00, 0.60, 0.40, -0.00, 0.1, -1.38, -0.00, 0, 1.38, 0.00, -0.60, -0.40,
+    0.20, 0.1,  0.00, 0.60, 0.40, -0.00, -0.60, -1.00, -0.00, 0.60, 1.00, 0.00, -0.60, -0.40,
+    0.20, 0.1,  0.00, 0.60, 0.40, -0.00, -0.60, -0.50, -0.00, 0.60, 0.50, 0.00, -0.60, -0.40,
+  ]
+  climb_wall_loop: false
+  
+    #1
+  # 过断桥动作序列: 每步 = [duration, hold, pose0..11] 共14个3float
+  bridge_sequence: [
+    #完成时间，完成后的持续时间，FR_hip，FR_thigh，FR_calf，FL_hip，FL_thigh，FL_calf，RR_hip，RR_thigh，RR_calf，RL_hip，RL_thigh，RL_calf
+    
+    0.20, 0.1,  0.90, 0.60, 0.50, -0.00, -0.60, -0.40, -0.00, 0.60, 0.40, 0.90, -0.60, -0.50,
+    0.20, 0.1,  0.90, 0, 1.38, -0.00, -0.60, -0.40, -0.00, 0.60, 0.1, 0.90, 0.40, -1.38,
+    0.20, 0.1,  0.00, 0, 1.38, -0.00, -0.60, -0.40, -0.00, 0.60, 0.1, 0.00, 0.40, -1.38,
+    0.20, 0.1,  0.00, 0.60, 1.00, -0.00, -0.60, -0.40, -0.00, 0.60, 0.40, 0.00, -0.60, -1.00,
+    0.20, 0.1,  0.00, 0.60, 0.50, -0.00, -0.60, -0.40, -0.00, 0.60, 0.40, 0.00, -0.60, -0.50,
+   
+  ]
+
+  bridge_loop: false

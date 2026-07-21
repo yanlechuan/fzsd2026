@@ -1,0 +1,32 @@
+# Build and install artifacts (any depth)
+**/build/
+install/
+**/log/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+*.egg
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Compiled object files
+*.o
+*.obj
+
+# Third-party libraries (downloaded via scripts/)
+library/
+
+# CMake generated
+CMakeUserPresets.json
