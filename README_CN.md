@@ -190,6 +190,72 @@ python3 scripts/watch_lin_vel.py
 bash scripts/diagnose_controller.sh
 ```
 
+### 控制方式
+
+#### 键盘控制
+
+| 按键 | 功能 |
+|------|------|
+| **状态切换** |
+| `Num0` | 被动状态 → 站立 (GetUp) |
+| `Num9` | 站立 → 趴下 (GetDown) |
+| `Num5` | 小腿摆动 (CalfSwing) |
+| `Num6` | 爬墙动作 (ClimbWall) |
+| `Num7` | 过断桥动作 (Bridge) |
+| `Num8` | 蹲起 (Squat) |
+| `N` | 切换导航模式 (接收 `/cmd_vel`) |
+| **技能切换** |
+| `Num1` | RL Locomotion 1 (基础行走) |
+| `Num2` | RL Locomotion 2 |
+| `Num3` | RL Locomotion 3 |
+| `Num4` | RL Locomotion 4 |
+| **移动控制** |
+| `W` | 前进 (x+) |
+| `S` | 后退 (x-) |
+| `A` | 左移 (y+) |
+| `D` | 右移 (y-) |
+| `Q` | 左转 (yaw+) |
+| `E` | 右转 (yaw-) |
+| `Space` | 重置移动命令为零 |
+| **电机** |
+| `P` | 切换到被动模式 (kp=0, kd=8) |
+| `R` | 仿真中重置机器人 |
+
+#### 手柄控制 (标准映射)
+
+使用 ROS2 `joy` 节点，如使用 XB1/PS4 手柄需安装：
+
+```bash
+sudo apt install ros-humble-joy
+ros2 run joy joy_node
+```
+
+| 手柄操作 | 功能 |
+|---------|------|
+| **状态切换** |
+| `A` | 站立 (GetUp) |
+| `B` | 趴下 (GetDown) |
+| `X` | 切换导航模式 |
+| **技能切换** |
+| `RB + D-Pad 上` | RL Locomotion 1 (基础行走) |
+| `RB + D-Pad 下` | RL Locomotion 2 |
+| `RB + D-Pad 左` | RL Locomotion 3 |
+| `RB + D-Pad 右` | RL Locomotion 4 |
+| `RT + D-Pad 上` | 爬墙 (ClimbWall) |
+| `RT + D-Pad 下` | 过断桥 (Bridge) |
+| **电机控制** |
+| `LB + A` | 电机使能 (执行 fix.sh) |
+| `LB + B` | 电机断电 (执行 robstride_off.sh) |
+| `LB + X` | 被动模式 |
+| `LB + RB` | 紧急停止 |
+| **系统** |
+| `LT + B` | 关机 (执行 poweroff.sh) |
+| **移动控制** |
+| 左摇杆 Y (上下) | 前进/后退 |
+| 左摇杆 X (左右) | 左移/右移 |
+| 右摇杆 X (左右) | 左转/右转 |
+```
+
 ## 预训练策略
 
 多个版本的策略文件位于 `policy/my_dog/`：

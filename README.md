@@ -184,6 +184,75 @@ python3 scripts/watch_lin_vel.py
 bash scripts/diagnose_controller.sh
 ```
 
+### Control Reference
+
+#### Keyboard Controls
+
+| Key | Function |
+|-----|----------|
+| **State Switching** |
+| `Num0` | Passive → GetUp (stand) |
+| `Num9` | GetUp → GetDown (lie down) |
+| `Num5` | Calf Swing |
+| `Num6` | Climb Wall |
+| `Num7` | Bridge Crossing |
+| `Num8` | Squat |
+| `N` | Toggle navigation mode (accept `/cmd_vel`) |
+| **Skill Switching** |
+| `Num1` | RL Locomotion 1 (basic walking) |
+| `Num2` | RL Locomotion 2 |
+| `Num3` | RL Locomotion 3 |
+| `Num4` | RL Locomotion 4 |
+| **Movement** |
+| `W` | Forward (x+) |
+| `S` | Backward (x-) |
+| `A` | Strafe left (y+) |
+| `D` | Strafe right (y-) |
+| `Q` | Turn left (yaw+) |
+| `E` | Turn right (yaw-) |
+| `Space` | Reset all movement commands to zero |
+| **Motor** |
+| `P` | Switch to passive mode (kp=0, kd=8) |
+| `R` | Reset robot in simulation |
+| **Simulation Only** |
+| `Enter` | Toggle Gazebo pause/resume |
+
+#### Gamepad Controls (Standard Mapping)
+
+Requires ROS2 `joy` node:
+
+```bash
+sudo apt install ros-humble-joy
+ros2 run joy joy_node
+```
+
+Standard gamepad button mapping (tested with XBOX/PS4 controllers):
+
+| Gamepad Input | Function |
+|--------------|----------|
+| **State Switching** |
+| `A` | GetUp (stand up) |
+| `B` | GetDown (lie down) |
+| `X` | Toggle navigation mode |
+| **Skill Switching** |
+| `RB + D-Pad Up` | RL Locomotion 1 (basic walking) |
+| `RB + D-Pad Down` | RL Locomotion 2 |
+| `RB + D-Pad Left` | RL Locomotion 3 |
+| `RB + D-Pad Right` | RL Locomotion 4 |
+| `RT + D-Pad Up` | Climb Wall |
+| `RT + D-Pad Down` | Bridge Crossing |
+| **Motor Control** |
+| `LB + A` | Motor enable (executes fix.sh) |
+| `LB + B` | Motor disable (executes robstride_off.sh) |
+| `LB + X` | Passive mode |
+| `LB + RB` | Emergency stop |
+| **System** |
+| `LT + B` | System shutdown (executes poweroff.sh) |
+| **Movement** |
+| Left Stick Y-axis | Forward/Backward |
+| Left Stick X-axis | Strafe Left/Right |
+| Right Stick X-axis | Turn Left/Right |
+
 ## Pretrained Policies
 
 Multiple policy versions are available in `policy/my_dog/`:
