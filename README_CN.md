@@ -1,122 +1,192 @@
-# rl_sar
+# fzsd2026 — 自研四足机器人 my_dog 强化学习控制框架
 
-[![Ubuntu 20.04/22.04](https://img.shields.io/badge/Ubuntu-20.04/22.04-blue.svg?logo=ubuntu)](https://ubuntu.com/)
-[![macOS](https://img.shields.io/badge/macOS-Experimental-orange.svg?logo=apple)](https://www.apple.com/macos/)
-[![ROS Noetic](https://img.shields.io/badge/ros-noetic-brightgreen.svg?logo=ros)](https://wiki.ros.org/noetic)
-[![ROS2 Foxy/Humble](https://img.shields.io/badge/ros2-foxy/humble-brightgreen.svg?logo=ros)](https://wiki.ros.org/foxy)
+[![Ubuntu 22.04](https://img.shields.io/badge/Ubuntu-22.04-blue.svg?logo=ubuntu)](https://ubuntu.com/)
+[![ROS2 Humble](https://img.shields.io/badge/ROS2-Humble-brightgreen.svg?logo=ros)](https://docs.ros.org/en/humble/)
 [![Gazebo](https://img.shields.io/badge/Gazebo-Classic-lightgrey.svg?logo=gazebo)](http://gazebosim.org/)
-[![MuJoCo](https://img.shields.io/badge/MuJoCo-3.2.7-orange.svg?logo=mujoco)](https://mujoco.org/)
 [![License](https://img.shields.io/badge/license-Apache2.0-yellow.svg?logo=apache)](https://opensource.org/license/apache-2-0)
 
-[English document](README.md)
+> 本项目基于 [rl_sar](https://github.com/fan-ziqi/rl_sar) (v4.0.0) 框架，针对自研四足机器人 **my_dog** 进行了深度定制。感谢原作者 [Ziqi Fan](https://github.com/fan-ziqi) 及其贡献者的出色工作。
 
-本仓库提供了机器人强化学习算法的仿真验证与实物部署框架，适配四足机器人、轮足机器人、人形机器人。"sar"代表"simulation and real"
+[English](README.md)
 
-> 支持**IsaacGym**和**IsaacSim**
->
-> 支持**ROS-Noetic**和**ROS2-Foxy/Humble**
->
-> 支持**libtorch**和**onnxruntime**
->
-> 支持**Linux**和**macOS**(只支持Mujoco仿真)
->
-> 支持**Gazebo**和**Mujoco**(部分支持)
->
-> 支持**Locomotion**和**Dance**
+## 项目简介
 
-支持列表：
+本项目为自研四足机器人 **my_dog** 提供了完整的强化学习控制框架，涵盖 **仿真验证 → 实机部署** 的全流程。主要特性：
 
-|Robot Name (rname:=)|Pre-Trained Policy|Gazebo|Mujoco|Real|
-|-|-|-|-|-|
-|Unitree-A1 (a1)|legged_gym (IsaacGym)|✅|❌|✅|
-|Unitree-Go2 (go2)|himloco (IsaacGym)</br>robot_lab (IsaacSim)|✅|✅|✅</br>✅|
-|Unitree-Go2W (go2w)|robot_lab (IsaacSim)|✅|✅|✅|
-|Unitree-B2 (b2)|robot_lab (IsaacSim)|✅|✅|⚪|
-|Unitree-B2W (b2w)|robot_lab (IsaacSim)|✅|✅|⚪|
-|Unitree-G1 (g1)|robomimic/locomotion (IsaacGym)</br>robomimic/charleston (IsaacGym)</br>whole_body_tracking/dance_102 (IsaacSim)</br>whole_body_tracking/gangnam_style (IsaacSim)|✅|✅|✅|
-|FFTAI-GR1T1 (gr1t1)</br>(Only available on Ubuntu20.04)|legged_gym (IsaacGym)|✅|❌|⚪|
-|FFTAI-GR1T2 (gr1t2)</br>(Only available on Ubuntu20.04)|legged_gym (IsaacGym)|✅|❌|⚪|
-|zhinao-L4W4 (l4w4)|legged_gym (IsaacGym)|✅|❌|✅|
-|Deeprobotics-Lite3 (lite3)|himloco (IsaacGym)|✅|❌|✅|
-|DDTRobot-Tita (tita)|robot_lab (IsaacSim)|✅|❌|⚪|
+- **自研 my_dog 机器人**：12 自由度四足机器人（4腿 × 3关节）
+- **RobStride 电机 CAN 驱动**：基于 ROS2 的多路 CAN 总线电机控制
+- **RL 策略部署**：支持 onnxruntime 与 libtorch 双推理后端
+- **Gazebo 仿真**：完整的 my_dog URDF 模型与仿真环境
+- **自定义动作**：蹲起、爬墙、过断桥等动作序列
 
-> [!IMPORTANT]
-> Python版本暂时停止维护，如有需要请使用[v2.3](https://github.com/fan-ziqi/rl_sar/releases/tag/v2.3)版本，后续可能会重新上线。
+## 与原版 rl_sar 的差异
 
-> [!NOTE]
-> 如果你想使用IsaacLab（IsaacSim）训练策略，请使用 [robot_lab](https://github.com/fan-ziqi/robot_lab) 项目。
->
-> robot_lab配置文件中的关节顺序 `joint_names` 与本项目代码中 `xxx/robot_lab/config.yaml` 中定义的相同。
->
-> 在 [Github Discussion](https://github.com/fan-ziqi/rl_sar/discussions) 或 [Discord](https://www.robotsfan.com/dc_rl_sar) 中讨论
+本项目基于 [rl_sar](https://github.com/fan-ziqi/rl_sar) (v4.0.0) 进行了大量精简和定制：
 
-> [!CAUTION]
-> **免责声明：使用者确认使用本代码产生的所有风险及后果均由使用者自行承担，作者不承担任何直接或间接责任，操作前必须确保已采取充分安全防护措施。**
+### ✨ 新增
+| 项目 | 说明 |
+|------|------|
+| `src/robstride_ros2/` | **RobStride 电机 ROS2 驱动包** — 支持多路 CAN 总线，每路独立配置 EID/ID/actuator_type |
+| `src/robot_joint_controller/` | **自定义关节控制器** — 适配 my_dog 的 ROS2 control 硬件接口 |
+| `src/robot_msgs/` | **自定义消息包** — MotorState, RobotCommand, RobotState, IMU 等 |
+| `src/rl_sar/src/rl_real_my_dog.cpp` | **实机部署程序** — my_dog 专用状态机与通信 |
+| `src/rl_sar/fsm_robot/fsm_my_dog.hpp` | **my_dog 状态机** — 蹲起/爬墙/过断桥等动作序列 |
+| `policy/my_dog/` | **预训练策略** — robot_lab 多个版本 |
+| `src/rl_sar_zoo/my_dog_description/` | **my_dog 机器人模型** — URDF/XACRO/MJCF |
+| `scripts/` | **辅助脚本** — check_motor, watch_lin_vel, diagnose_controller 等 |
+| `setup.sh` | **CAN 接口一键配置脚本** |
 
-## 准备
+### 🔧 精简
+- 移除了原版所有其他机器人支持（A1, Go2, Go2W, B2, B2W, G1, GR1T1, GR1T2, L4W4, Lite3, Tita）
+- 精简了 `include/` 头文件，仅保留 my_dog 所需
+- 移除了 ROS1 (Noetic) 和 ROS2 Foxy 的兼容代码
+- 移除了 macOS 支持相关内容
+- 移除了 Python 版本相关内容
 
-拉取仓库
+### 🏗 保留的核心框架
+- `inference_runtime` — 推理运行时 (libtorch/onnxruntime)
+- `rl_sdk` — 强化学习控制 SDK
+- `motion_loader` — 动作加载器
+- `observation_buffer` — 观测值缓冲区
+- Gazebo / MuJoCo 仿真框架
+- FSM 状态机框架
 
-```bash
-git clone --recursive --depth 1 https://github.com/fan-ziqi/rl_sar.git
-```
+## 硬件平台
 
-如需更新
+| 组件 | 说明 |
+|------|------|
+| 主控 | NVIDIA Jetson (Orin 系列) |
+| 电机 | RobStride 关节电机 × 12 |
+| 通信 | CAN 总线（4路 can0~can3） |
+| 关节 | 12 DOF（4腿 × 3关节：髋/大腿/小腿） |
+| IMU | hipnuc IMU |
+| 系统 | Ubuntu 22.04 + ROS2 Humble |
 
-```bash
-git pull
-git submodule update --init --recursive --recommend-shallow --progress
-```
+## 快速开始
 
-## 依赖
-
-安装必要的依赖：
+### 系统依赖
 
 ```bash
-# Ubuntu
-sudo apt install cmake g++ build-essential libyaml-cpp-dev libeigen3-dev libboost-all-dev libspdlog-dev libfmt-dev libtbb-dev liblcm-dev
+sudo apt install cmake g++ build-essential libyaml-cpp-dev libeigen3-dev \
+  libboost-all-dev libspdlog-dev libfmt-dev libtbb-dev liblcm-dev
 
-# macOS
-brew install boost lcm yaml-cpp tbb libomp pkg-config glfw
+# ROS2 相关
+sudo apt install ros-humble-control-toolbox ros-humble-hardware-interface \
+  ros-humble-controller-interface ros-humble-controller-manager \
+  ros-humble-joint-state-broadcaster
+
+# Gazebo
+sudo apt install ros-humble-gazebo-ros-pkgs ros-humble-gazebo-ros2-control
+
+# 其他
+sudo apt install ros-humble-teleop-twist-keyboard ros-humble-ros2-control \
+  ros-humble-ros2-controllers ros-humble-robot-state-publisher \
+  ros-humble-joint-state-publisher-gui ros-humble-xacro
 ```
 
-如果需要使用ROS，安装下列依赖包：
+### 下载第三方库
 
 ```bash
-# ros-noetic (Ubuntu20.04)
-sudo apt install ros-noetic-teleop-twist-keyboard ros-noetic-controller-interface ros-noetic-gazebo-ros-control ros-noetic-joint-state-controller ros-noetic-effort-controllers ros-noetic-joint-trajectory-controller ros-noetic-joy ros-noetic-ros-control ros-noetic-ros-controllers ros-noetic-controller-manager
-
-# ros2-foxy (Ubuntu20.04) / ros2-humble (Ubuntu22.04)
-sudo apt install ros-$ROS_DISTRO-teleop-twist-keyboard ros-$ROS_DISTRO-ros2-control ros-$ROS_DISTRO-ros2-controllers ros-$ROS_DISTRO-control-toolbox ros-$ROS_DISTRO-robot-state-publisher ros-$ROS_DISTRO-joint-state-publisher-gui ros-$ROS_DISTRO-gazebo-ros2-control ros-$ROS_DISTRO-gazebo-ros-pkgs ros-$ROS_DISTRO-xacro
+bash scripts/download_inference_runtime.sh
+bash scripts/download_mujoco.sh
+bash scripts/download_robot_descriptions.sh
 ```
 
-## 编译
-
-在项目根目录中执行下面的脚本编译整个项目
+### 编译
 
 ```bash
 ./build.sh
+source install/setup.bash
 ```
 
-若想单独编译某几个包，可以在后面加上包名
+> 仅编译特定包：`./build.sh package1 package2`
+>
+> 清理构建：`./build.sh -c`
+>
+> 仅编译实机代码（禁用 ROS）：`./build.sh -m`
+
+## 使用
+
+### Gazebo 仿真
 
 ```bash
-./build.sh package1 package2
+# 启动仿真
+ros2 launch rl_sar rl_sim.launch.py rname:=my_dog wname:=empty
 ```
 
-若想删除构建，可以使用下列命令，此命令会删除所有编译产物和创建的软链接
+### 实机部署
 
 ```bash
-./build.sh -c  # or ./build.sh --clean
+# 1. 配置 CAN 接口
+sudo bash setup.sh
+
+# 2. 启动电机驱动
+ros2 launch robstride_ros2 rs_motor_ros2_launch.py
+
+# 3. 启动 RL 控制
+ros2 run rl_sar rl_real_my_dog --ros-args -p rname:=my_dog
 ```
 
-如果不需要仿真，只在机器人上运行，可以使用CMake进行编译，同时禁用ROS（编译生成的可执行文件在`cmake_build/bin`中，库在`cmake_build/lib`中）
+### 工具脚本
 
 ```bash
-./build.sh -m  # or ./build.sh --cmake
+# 检查电机状态
+python3 scripts/check_motor.py
+
+# 查看线速度
+python3 scripts/watch_lin_vel.py
+
+# 诊断控制器
+bash scripts/diagnose_controller.sh
 ```
 
-若想使用Mujoco仿真器
+## 预训练策略
+
+多个版本的策略文件位于 `policy/my_dog/`：
+
+| 版本 | 目录 |
+|------|------|
+| robot_lab | `policy/my_dog/robot_lab/` |
+| robot_lab2 | `policy/my_dog/robot_lab2/` |
+| robot_lab3 | `policy/my_dog/robot_lab3/` |
+| robot_lab4 | `policy/my_dog/robot_lab4/` |
+
+> 如需训练策略，请使用 [robot_lab](https://github.com/fan-ziqi/robot_lab) 项目。训练后导出 ONNX 模型放入对应目录即可。
+
+## 项目目录
+
+```
+fzsd2026/
+├── src/
+│   ├── rl_sar/                    # 核心框架（精简版）
+│   │   ├── src/rl_real_my_dog.cpp # 实机部署
+│   │   ├── src/rl_sim.cpp         # Gazebo 仿真
+│   │   ├── fsm_robot/             # 状态机
+│   │   └── launch/                # 启动文件
+│   ├── rl_sar_zoo/                # 机器人模型
+│   ├── robstride_ros2/            # ★ RobStride 电机驱动
+│   ├── robot_joint_controller/    # ★ 关节控制器
+│   └── robot_msgs/                # ★ 自定义消息
+├── policy/my_dog/                 # 预训练策略
+├── scripts/                       # 工具脚本
+├── build.sh                       # 构建脚本
+├── setup.sh                       # CAN 配置脚本
+└── 额外依赖.md
+```
+
+## 许可证
+
+本项目沿用原项目的 [Apache License 2.0](LICENSE)。
+
+## 致谢
+
+- [rl_sar](https://github.com/fan-ziqi/rl_sar) — 提供核心 SAR 框架
+- [robot_lab](https://github.com/fan-ziqi/robot_lab) — IsaacLab 训练框架
+- 原项目所有贡献者（详见 [CONTRIBUTORS.md](CONTRIBUTORS.md)）
+
+---
+
+> **免责声明：使用者确认使用本代码产生的所有风险及后果均由使用者自行承担，作者不承担任何直接或间接责任，操作前必须确保已采取充分安全防护措施。**
 
 ```bash
 ./build.sh -mj  # or ./build.sh --mujoco
