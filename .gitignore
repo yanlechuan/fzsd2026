@@ -10,6 +10,9 @@ __pycache__/
 *.egg-info/
 *.egg
 
+# Experiment / training data
+policy/my_dog/*.csv
+
 # IDE and editor files
 .vscode/
 .idea/
