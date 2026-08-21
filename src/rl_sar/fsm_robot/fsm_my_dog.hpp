@@ -1046,6 +1046,10 @@ public:
         {
             return "RLFSMStateGetUp";
         }
+        else if (rl.control.current_keyboard == Input::Keyboard::Num1 || rl.control.current_gamepad == Input::Gamepad::RB_DPadUp)
+        {
+            return "RLFSMStateRLLocomotion";
+        }
         else if (rl.control.current_keyboard == Input::Keyboard::Num2 || rl.control.current_gamepad == Input::Gamepad::RB_DPadDown)
         {
             return "RLFSMStateRLLocomotion2";

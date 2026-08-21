@@ -14,6 +14,8 @@
 #include "inference_runtime.hpp"  // 提供模型推理接口
 #include "loop.hpp"               // 提供周期性循环功能
 #include "fsm_my_dog.hpp"         // 提供my_dog的状态机定义
+#include "sbus_parser.hpp"        // SBUS/W.BUS 协议解析
+#include "rc_input_mapper.hpp"    // RC 遥控器到 Gamepad 映射
 #include <mutex>
 #include "sensor_msgs/msg/joint_state.hpp" // 提供关节状态消息定义
 
@@ -65,6 +67,7 @@ private:
     std::shared_ptr<LoopFunc> loop_keyboard; // 键盘输入循环
     std::shared_ptr<LoopFunc> loop_control;  // 机器人控制循环
     std::shared_ptr<LoopFunc> loop_rl;       // rl循环
+    std::shared_ptr<LoopFunc> loop_rc;       // RC遥控器输入循环
     std::shared_ptr<LoopFunc> loop_plot;     // 绘图循环
 
     // plot
@@ -91,6 +94,18 @@ private:
     std::mutex motor_states_mutex_; // 电机状态互斥锁，用于保护电机状态的并发访问
     std::mutex command_mutex_; // 命令互斥锁，用于保护命令的并发访问
     std::mutex robot_state_mutex_; // 机器人状态互斥锁，用于保护机器人状态的并发访问(this->robot_state)
+
+    // RC (航模遥控器)
+    sbus::Reader  rc_reader_;
+    rc::Mapper    rc_mapper_;
+    bool          rc_enabled_ = false;
+    std::string   rc_port_ = "/dev/ttyUSB0";
+    int           rc_baud_ = 100000;
+    float         rc_rd_   = 0.0f;       // RD 旋钮 [0, 1]
+    bool          rc_poweroff_triggered_ = false;  // RD 关机防重复
+    int           rc_last_retry_ = 0;             // 上次重试的 motiontime
+    void RCInterface();       // RC 遥控器输入处理
+    void InitRC();            // 初始化 RC 串口和映射
 
     // others
     std::vector<float> mapped_joint_positions; // 映射后的关节位置，具体映射关系需要根据my_dog的关节定义进行调整

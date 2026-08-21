@@ -177,6 +177,14 @@ RL_Sim::RL_Sim(int argc, char **argv)
     this->loop_keyboard = std::make_shared<LoopFunc>("loop_keyboard", 0.05, std::bind(&RL_Sim::KeyboardInterface, this));
     this->loop_keyboard->start();
 
+    // RC (航模遥控器) — 仿真中可通过 YAML 开启
+    this->InitRC();
+    if (this->rc_enabled_)
+    {
+        this->loop_rc = std::make_shared<LoopFunc>("loop_rc", 0.02, std::bind(&RL_Sim::RCInterface, this));
+        this->loop_rc->start();
+    }
+
 #ifdef PLOT
     this->plot_t = std::vector<int>(this->plot_size, 0);
     this->plot_real_joint_pos.resize(this->params.Get<int>("num_of_dofs"));
@@ -201,12 +209,14 @@ RL_Sim::RL_Sim(int argc, char **argv)
 
 RL_Sim::~RL_Sim()
 {
+    if (this->loop_rc) this->loop_rc->shutdown();
     this->loop_keyboard->shutdown();
     this->loop_control->shutdown();
     this->loop_rl->shutdown();
 #ifdef PLOT
     this->loop_plot->shutdown();
 #endif
+    this->rc_reader_.stop();
     std::cout << LOGGER::INFO << "RL_Sim exit" << std::endl;
 }
 
@@ -708,6 +718,99 @@ void RL_Sim::Plot()
     }
     // plt::legend();
     plt::pause(0.01);
+}
+
+// ============================================================
+// RC 遥控器 (ET08A W.BUS) 接口
+// ============================================================
+void RL_Sim::InitRC()
+{
+    this->rc_enabled_ = this->params.Get<bool>("rc_enabled", false);
+    if (!this->rc_enabled_)
+    {
+        std::cout << LOGGER::NOTE << "[RC] RC disabled (rc_enabled=false in YAML). Using keyboard/joy." << std::endl;
+        return;
+    }
+
+    this->rc_port_ = this->params.Get<std::string>("rc_port", "/dev/ttyUSB0");
+    this->rc_baud_ = this->params.Get<int>("rc_baud", 100000);
+
+    std::cout << LOGGER::NOTE << "[RC] Opening " << rc_port_ << " @ " << rc_baud_ << " baud..." << std::endl;
+
+    if (!rc_reader_.open(rc_port_, rc_baud_))
+    {
+        std::cout << LOGGER::ERROR << "[RC] Failed to open " << rc_port_ << std::endl;
+        this->rc_enabled_ = false;
+        return;
+    }
+
+    rc_reader_.start();
+    std::cout << LOGGER::NOTE << "[RC] Serial port opened, background reader started." << std::endl;
+
+    int ch_roll     = this->params.Get<int>("rc_ch_roll",     0);
+    int ch_pitch    = this->params.Get<int>("rc_ch_pitch",    1);
+    int ch_throttle = this->params.Get<int>("rc_ch_throttle", 2);
+    int ch_yaw      = this->params.Get<int>("rc_ch_yaw",      3);
+    int ch_sa       = this->params.Get<int>("rc_ch_sa",       4);
+    int ch_sb       = this->params.Get<int>("rc_ch_sb",       5);
+    int ch_sc       = this->params.Get<int>("rc_ch_sc",       6);
+    int ch_rd       = this->params.Get<int>("rc_ch_rd",       7);
+    rc_mapper_.setChannelMap(ch_roll, ch_pitch, ch_throttle, ch_yaw,
+                             ch_sa, ch_sb, ch_sc, ch_rd);
+
+    std::cout << LOGGER::NOTE << "[RC] Initialized for simulation." << std::endl;
+}
+
+void RL_Sim::RCInterface()
+{
+    static int call_cnt = 0;
+    call_cnt++;
+
+    if (!rc_enabled_)
+    {
+        if (call_cnt == 1)
+            std::cout << LOGGER::WARNING << "[RC] rc_enabled_=false, RC interface disabled." << std::endl;
+        return;
+    }
+
+    if (!rc_reader_.isRunning())
+    {
+        if (call_cnt == 1)
+            std::cout << LOGGER::WARNING << "[RC] Reader not running!" << std::endl;
+        return;
+    }
+
+    sbus::Frame frame;
+    if (!rc_reader_.getLatest(frame))
+    {
+        if (call_cnt % 50 == 1)
+            std::cout << "\r\033[K" << std::flush << "[RC] Waiting for frames... (call #" << call_cnt << ")" << std::flush;
+        return;
+    }
+
+    Input::Gamepad gp = Input::Gamepad::None;
+    float x = 0.0f, y = 0.0f, yaw = 0.0f, rd = 0.0f;
+
+    if (rc_mapper_.process(frame, gp, x, y, yaw, rd))
+    {
+        if (gp != Input::Gamepad::None)
+            this->control.SetGamepad(gp);
+        this->control.x   = x;
+        this->control.y   = y;
+        this->control.yaw = yaw;
+
+        // 诊断输出 (每秒一次)
+        static int diag_cnt = 0;
+        diag_cnt++;
+        if (diag_cnt % 50 == 0)
+        {
+            std::cout << LOGGER::INFO
+                      << "[RC] gp=" << static_cast<int>(gp)
+                      << " x=" << std::fixed << std::setprecision(2) << x
+                      << " y=" << y << " yaw=" << yaw
+                      << " rd=" << rd << std::endl;
+        }
+    }
 }
 
 #if defined(USE_ROS1)

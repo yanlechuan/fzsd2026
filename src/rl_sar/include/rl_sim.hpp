@@ -14,6 +14,8 @@
 #include "inference_runtime.hpp"
 #include "loop.hpp"
 #include "fsm_all.hpp"
+#include "sbus_parser.hpp"        // SBUS/W.BUS 协议解析
+#include "rc_input_mapper.hpp"    // RC 遥控器到 Gamepad 映射
 
 #include <csignal>
 #include <vector>
@@ -72,6 +74,7 @@ private:
     std::shared_ptr<LoopFunc> loop_keyboard;
     std::shared_ptr<LoopFunc> loop_control;
     std::shared_ptr<LoopFunc> loop_rl;
+    std::shared_ptr<LoopFunc> loop_rc;       // RC 遥控器输入循环
     std::shared_ptr<LoopFunc> loop_plot;
 
     // plot
@@ -131,6 +134,15 @@ private:
     void RobotStateCallback(const robot_msgs::msg::RobotState::SharedPtr msg);
     void JoyCallback(const sensor_msgs::msg::Joy::SharedPtr msg);
 #endif
+
+    // RC (航模遥控器)
+    sbus::Reader  rc_reader_;
+    rc::Mapper    rc_mapper_;
+    bool          rc_enabled_ = false;
+    std::string   rc_port_ = "/dev/ttyUSB0";
+    int           rc_baud_ = 100000;
+    void RCInterface();       // RC 遥控器输入处理
+    void InitRC();            // 初始化 RC 串口和映射
 
     // others
     std::string gazebo_model_name;

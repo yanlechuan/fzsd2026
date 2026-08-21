@@ -154,13 +154,24 @@ RL_Real::RL_Real(int argc, char **argv) // RL_Real类的构造函数
 
     // 关闭运动控制切换的相关服务
 
+    // RC 遥控器初始化 (YAML: rc_enabled, rc_port, rc_baud)
+    InitRC();
+
     // loop
     this->loop_keyboard = std::make_shared<LoopFunc>("keyboard", 0.05, std::bind(&RL_Real::KeyboardInterface, this));
     this->loop_control = std::make_shared<LoopFunc>("control", this->params.Get<float>("dt"), std::bind(&RL_Real::RobotControl, this));
     this->loop_rl = std::make_shared<LoopFunc>("rl", this->params.Get<float>("dt") * this->params.Get<int>("decimation"), std::bind(&RL_Real::RunModel, this));
+    if (this->rc_enabled_)
+    {
+        this->loop_rc = std::make_shared<LoopFunc>("rc_input", 0.01, std::bind(&RL_Real::RCInterface, this));
+    }
     this->loop_keyboard->start();
     this->loop_control->start();
     this->loop_rl->start();
+    if (this->rc_enabled_ && this->loop_rc)
+    {
+        this->loop_rc->start();
+    }
 #ifdef PLOT
     this->plot_t = std::vector<int>(this->plot_size, 0);
     this->plot_real_joint_pos = std::vector<std::vector<float>>(this->params.Get<int>("num_of_dofs"), std::vector<float>(this->plot_size, 0.0f));
@@ -186,6 +197,8 @@ RL_Real::~RL_Real()
     this->loop_keyboard->shutdown();
     this->loop_control->shutdown();
     this->loop_rl->shutdown();
+    if (this->loop_rc) this->loop_rc->shutdown();
+    this->rc_reader_.stop();
 #ifdef PLOT
     this->loop_plot->shutdown();
 #endif
@@ -224,6 +237,121 @@ RL_Real::~RL_Real()
         this->body_velocity_publisher_.reset();
     }
 #endif
+}
+
+// ============================================================
+// RC 遥控器 (ET08A W.BUS) 接口
+// ============================================================
+void RL_Real::InitRC()
+{
+    this->rc_enabled_ = this->params.Get<bool>("rc_enabled", false);
+    if (!this->rc_enabled_)
+    {
+        std::cout << LOGGER::NOTE << "[RC] RC disabled (rc_enabled=false in YAML). Using ROS /joy or keyboard." << std::endl;
+        return;
+    }
+
+    this->rc_port_ = this->params.Get<std::string>("rc_port", "/dev/ttyUSB0");
+    this->rc_baud_ = this->params.Get<int>("rc_baud", 100000);
+
+    // 先配置通道映射（即使串口尚未打开）
+    int ch_roll    = this->params.Get<int>("rc_ch_roll",    0);
+    int ch_pitch   = this->params.Get<int>("rc_ch_pitch",   1);
+    int ch_throttle= this->params.Get<int>("rc_ch_throttle",2);
+    int ch_yaw     = this->params.Get<int>("rc_ch_yaw",     3);
+    int ch_sa      = this->params.Get<int>("rc_ch_sa",      4);
+    int ch_sb      = this->params.Get<int>("rc_ch_sb",      5);
+    int ch_sc      = this->params.Get<int>("rc_ch_sc",      6);
+    int ch_rd      = this->params.Get<int>("rc_ch_rd",      7);
+    rc_mapper_.setChannelMap(ch_roll, ch_pitch, ch_throttle, ch_yaw,
+                             ch_sa, ch_sb, ch_sc, ch_rd);
+
+    std::cout << LOGGER::NOTE << "[RC] Mapping:" << std::endl;
+    std::cout << LOGGER::NOTE << "  Sticks: CH1→yaw  CH2→x  CH4→y" << std::endl;
+    std::cout << LOGGER::NOTE << "  Knob:   CH" << (ch_rd+1) << "→RD [0~1], max→poweroff" << std::endl;
+    std::cout << LOGGER::NOTE << "  SA (CH" << (ch_sa+1) << "): HIGH→RL1  LOW→RL2" << std::endl;
+    std::cout << LOGGER::NOTE << "  SB (CH" << (ch_sb+1) << "): HIGH→MotorEnable  LOW→MotorDisable" << std::endl;
+    std::cout << LOGGER::NOTE << "  SC (CH" << (ch_sc+1) << "): LOW→Passive  HIGH→GetUp" << std::endl;
+
+    // 尝试打开串口（失败不放弃，RCInterface 会持续重试）
+    std::cout << LOGGER::NOTE << "[RC] Opening " << rc_port_ << " @ " << rc_baud_ << " baud..." << std::endl;
+
+    if (rc_reader_.open(rc_port_, rc_baud_))
+    {
+        rc_reader_.start();
+        std::cout << LOGGER::NOTE << "[RC] Serial port opened, background reader started." << std::endl;
+    }
+    else
+    {
+        std::cout << LOGGER::WARNING << "[RC] Failed to open " << rc_port_
+                  << ". Will retry in background. Check: "
+                  << "sudo chmod 666 " << rc_port_
+                  << " or add user to dialout group." << std::endl;
+        // 不设 rc_enabled_=false, RCInterface 会持续重试
+    }
+}
+
+void RL_Real::RCInterface()
+{
+    if (!rc_enabled_)
+        return;
+
+    // 串口未打开 → 每 2 秒重试一次
+    if (!rc_reader_.isRunning())
+    {
+        int retry_interval = static_cast<int>(2.0f / this->params.Get<float>("dt", 0.001f));
+        if (this->motiontime - rc_last_retry_ > retry_interval)
+        {
+            rc_last_retry_ = this->motiontime;
+            if (rc_reader_.open(rc_port_, rc_baud_))
+            {
+                rc_reader_.start();
+                std::cout << LOGGER::NOTE << "[RC] Serial port reconnected on " << rc_port_ << "!" << std::endl;
+            }
+        }
+        return;
+    }
+
+    sbus::Frame frame;
+    if (!rc_reader_.getLatest(frame))
+        return;
+
+    Input::Gamepad gp = Input::Gamepad::None;
+    float x = 0.0f, y = 0.0f, yaw = 0.0f, rd = 0.0f;
+
+    if (rc_mapper_.process(frame, gp, x, y, yaw, rd))
+    {
+        if (gp != Input::Gamepad::None)
+            this->control.SetGamepad(gp);
+        this->control.x   = x;
+        this->control.y   = y;
+        this->control.yaw = yaw;
+        this->rc_rd_      = rd;
+
+        // 诊断输出 (每秒一次)
+        static int diag_cnt = 0;
+        diag_cnt++;
+        if (diag_cnt % 100 == 0)
+        {
+            std::cout << LOGGER::INFO
+                      << "[RC] gp=" << static_cast<int>(gp)
+                      << " x=" << std::fixed << std::setprecision(2) << x
+                      << " y=" << y << " yaw=" << yaw
+                      << " rd=" << rd << std::endl;
+        }
+
+        // RD 旋钮关机: 逆时针拧到底 (>1600 原始值, rd > 0.93), 只触发一次
+        if (!rc_poweroff_triggered_ && rd > 0.93f)
+        {
+            rc_poweroff_triggered_ = true;
+            std::cout << LOGGER::WARNING << "[RC] RD knob at maximum (rd=" << rd
+                      << "), executing poweroff.sh..." << std::endl;
+            int ret = system("bash $HOME/rl_sar/src/rl_sar/poweroff.sh &");
+            if (ret != 0)
+                std::cout << LOGGER::ERROR << "[RC] poweroff.sh failed: " << ret << std::endl;
+        }
+    }
+    // failsafe/frame_lost → 不更新 control, 保持上一帧指令
 }
 
 void RL_Real::InitLowCmd()

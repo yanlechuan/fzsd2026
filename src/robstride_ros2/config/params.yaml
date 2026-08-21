@@ -1,0 +1,22 @@
+rs_motor_ros2:
+  ros__parameters:
+    # 多个 CAN 接口（最多 5 个，可少于 5）
+    can_ifaces: ["can0", "can1", "can2", "can3", "can4"]
+    # 请列出所有电机的 ID（至少 12 个或更多）
+    motor_ids: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    # motor_iface_map 指定每个 motor 对应的 can_ifaces 索引（与 motor_ids 长度一致）
+    # 例如 [0,0,1,1,2,2,...] 表示前两个电机使用 can_ifaces[0], 下两个使用 can_ifaces[1] 等
+    motor_iface_map: [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3]
+    master_id: 255
+    actuator_type: 2
+    # 可选：为每个电机分别指定 master_id（长度与 motor_ids 相同），若为空则使用上面的 master_id
+    motor_master_ids: []
+    # 可选：为每个电机分别指定 actuator_type（长度与 motor_ids 相同），若为空则使用上面的 actuator_type
+    motor_actuator_types: []
+    # 可选：为每个电机分别指定底层 CAN EID（十进制或十六进制），若为空则使用 motor_ids 值
+    # 示例（十六进制或十进制皆可）： [0x01, 0x02, 0x03, ...]
+    motor_can_ids: [0x01,0x02,0x03,0x01,0x02,0x03,0x01,0x02,0x03,0x01,0x02,0x03]
+    motor_states_topic: "motor_states"
+    robot_command_topic: "robot_command"
+    imu_topic: "IMU_data"
+    publish_rate: 50

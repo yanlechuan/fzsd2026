@@ -9,6 +9,38 @@
 
 [English](README.md)
 
+## 目录
+
+- [项目简介](#项目简介)
+- [与原版 rl_sar 的差异](#与原版-rl_sar-的差异)
+  - [✨ 新增](#-新增)
+  - [🔧 精简](#-精简)
+  - [🏗 保留的核心框架](#-保留的核心框架)
+  - [🔧 RobStride 电机驱动优化详解](#-robstride-电机驱动优化详解)
+- [硬件平台](#硬件平台)
+- [快速开始](#快速开始)
+  - [系统依赖](#系统依赖)
+  - [下载第三方库](#下载第三方库)
+  - [编译](#编译)
+- [使用](#使用)
+  - [Gazebo 仿真](#gazebo-仿真)
+  - [实机部署](#实机部署)
+  - [工具脚本](#工具脚本)
+  - [控制方式](#控制方式)
+- [预训练策略](#预训练策略)
+- [项目目录](#项目目录)
+- [许可证](#许可证)
+- [致谢](#致谢)
+- [运行](#运行)
+  - [仿真](#仿真)
+  - [使用手机网页控制 (实验性)](#使用手机网页控制-实验性)
+  - [使用手柄或键盘控制](#使用手柄或键盘控制)
+  - [真实机器人](#真实机器人)
+  - [训练执行器网络](#训练执行器网络)
+- [添加你的机器人](#添加你的机器人)
+- [贡献](#贡献)
+- [引用](#引用)
+
 ## 项目简介
 
 本项目为自研四足机器人 **my_dog** 提供了完整的强化学习控制框架，涵盖 **仿真验证 → 实机部署** 的全流程。主要特性：
@@ -17,26 +49,29 @@
 - **RobStride 电机 CAN 驱动**：基于 ROS2 的多路 CAN 总线电机控制
 - **RL 策略部署**：支持 onnxruntime 与 libtorch 双推理后端
 - **Gazebo 仿真**：完整的 my_dog URDF 模型与仿真环境
-- **自定义动作**：蹲起、爬墙、过断桥等动作序列
+- **自定义动作**：蹲起、爬墙、过断桥等动作序列（）
 
 ## 与原版 rl_sar 的差异
 
 本项目基于 [rl_sar](https://github.com/fan-ziqi/rl_sar) (v4.0.0) 进行了大量精简和定制：
 
 ### ✨ 新增
-| 项目 | 说明 |
-|------|------|
-| `src/robstride_ros2/` | **RobStride 电机 ROS2 驱动包** — 多线程多CAN架构，详见下方优化说明 |
-| `src/robot_joint_controller/` | **自定义关节控制器** — 适配 my_dog 的 ROS2 control 硬件接口 |
-| `src/robot_msgs/` | **自定义消息包** — MotorState, RobotCommand, RobotState, IMU 等 |
-| `src/rl_sar/src/rl_real_my_dog.cpp` | **实机部署程序** — my_dog 专用状态机与通信 |
-| `src/rl_sar/fsm_robot/fsm_my_dog.hpp` | **my_dog 状态机** — 蹲起/爬墙/过断桥等动作序列 |
-| `policy/my_dog/` | **预训练策略** — robot_lab 多个版本 |
-| `src/rl_sar_zoo/my_dog_description/` | **my_dog 机器人模型** — URDF/XACRO/MJCF |
-| `scripts/` | **辅助脚本** — check_motor, watch_lin_vel, diagnose_controller 等 |
-| `setup.sh` | **CAN 接口一键配置脚本** |
+
+
+| 项目                                  | 说明                                                                |
+| ------------------------------------- | ------------------------------------------------------------------- |
+| `src/robstride_ros2/`                 | **RobStride 电机 ROS2 驱动包** — 多线程多CAN架构，详见下方优化说明 |
+| `src/robot_joint_controller/`         | **自定义关节控制器** — 适配 my_dog 的 ROS2 control 硬件接口        |
+| `src/robot_msgs/`                     | **自定义消息包** — MotorState, RobotCommand, RobotState, IMU 等    |
+| `src/rl_sar/src/rl_real_my_dog.cpp`   | **实机部署程序** — my_dog 专用状态机与通信                         |
+| `src/rl_sar/fsm_robot/fsm_my_dog.hpp` | **my_dog 状态机** — 蹲起/爬墙/过断桥等动作序列                     |
+| `policy/my_dog/`                      | **预训练策略** — robot_lab 多个版本                                |
+| `src/rl_sar_zoo/my_dog_description/`  | **my_dog 机器人模型** — URDF/XACRO/MJCF                            |
+| `scripts/`                            | **辅助脚本** — check_motor, watch_lin_vel, diagnose_controller 等  |
+| `setup.sh`                            | **CAN 接口一键配置脚本**                                            |
 
 ### 🔧 精简
+
 - 移除了原版所有其他机器人支持（A1, Go2, Go2W, B2, B2W, G1, GR1T1, GR1T2, L4W4, Lite3, Tita）
 - 精简了 `include/` 头文件，仅保留 my_dog 所需
 - 移除了 ROS1 (Noetic) 和 ROS2 Foxy 的兼容代码
@@ -44,6 +79,7 @@
 - 移除了 Python 版本相关内容
 
 ### 🏗 保留的核心框架
+
 - `inference_runtime` — 推理运行时 (libtorch/onnxruntime)
 - `rl_sdk` — 强化学习控制 SDK
 - `motion_loader` — 动作加载器
@@ -53,17 +89,19 @@
 
 ### 🔧 RobStride 电机驱动优化详解
 
-`src/robstride_ros2/` 基于 [RobStride 官方样例](https://github.com/RobStride/robstride_ros_sample) 进行了深度重构，从**单电机演示**升级为**生产级多电机集群控制系统**。
+`src/robstride_ros2/` 基于 [RobStride 官方样例](https://github.com/RobStride/robstride_ros_sample) 进行了深度重构，从**单电机演示**升级为**生产级多电机集群控制系统**
+该优化工作是战队的一位学长进行构建并完成的。
 
 #### 架构对比
 
-| 对比维度 | 官方样例 | 本项目 | 提升 |
-|---------|---------|--------|------|
-| 控制电机数 | 1 个 | 12 个 | 🚀 12x |
-| CAN 总线 | 1 条 | 4 条并联 | 🚀 4x |
-| 架构 | 单线程串行 | 每条 CAN 独立线程 | 🚀 |
-| 参数化 | 硬编码 | ROS2 参数动态配置 | 🚀 |
-| 状态发布 | ❌ 无 | 400 Hz 实时发布 | 🚀 新增 |
+
+| 对比维度   | 官方样例   | 本项目            | 提升    |
+| ---------- | ---------- | ----------------- | ------- |
+| 控制电机数 | 1 个       | 12 个             | 🚀 12x  |
+| CAN 总线   | 1 条       | 4 条并联          | 🚀 4x   |
+| 架构       | 单线程串行 | 每条 CAN 独立线程 | 🚀      |
+| 参数化     | 硬编码     | ROS2 参数动态配置 | 🚀      |
+| 状态发布   | ❌ 无      | 400 Hz 实时发布   | 🚀 新增 |
 
 #### 关键优化点
 
@@ -71,6 +109,7 @@
 每条 CAN 总线拥有独立的控制线程，内置命令队列（`condition_variable` 驱动），4 条 CAN 同时运行互不阻塞。
 
 **2. recv 超时保护**
+
 ```cpp
 // 官方: recv() 无超时 → 丢包则永久阻塞 → 系统死锁
 // 本项目: 10ms 超时 → 丢包后静默返回 → 系统继续运行
@@ -80,11 +119,13 @@ setsockopt(socket_fd, SOL_SOCKET, SO_RCVTIMEO, ...);
 ```
 
 **3. 动态频率补偿**
+
 ```
 目标周期: 2000μs (500Hz)
 实际逻辑: processing_time < 2000 → sleep(2000 - processing_time)
           processing_time ≥ 2000 → 立即进入下一周期
 ```
+
 自动适应不同处理器性能，控制频率稳定不漂移。
 
 **4. 内置频率监控**
@@ -92,25 +133,27 @@ setsockopt(socket_fd, SOL_SOCKET, SO_RCVTIMEO, ...);
 
 #### 低性能 CPU 仿真对比 (模拟 N100 级别)
 
-| 指标 | 官方版 | 本项目 | 说明 |
-|------|-------|--------|------|
-| 控制频率 | 16.7 Hz | **416.4 Hz** 🚀 | 官方远低于 RL 策略需求 (50~200Hz) |
-| 命令吞吐 | 200 cmd/s | **1249 cmd/s** 🚀 | 本项目吞吐量 **6.3 倍** |
-| 丢包后行为 | 永久阻塞死锁 ✅ | 10ms 超时安全恢复 ✅ | 本项目 55 次丢包 0 次卡死 |
-| 平行扩展 | 1 条 CAN 串行 12 电机 | 4 条 CAN × 3 电机并行 | 处理器越弱优势越明显 |
+
+| 指标       | 官方版                | 本项目                 | 说明                              |
+| ---------- | --------------------- | ---------------------- | --------------------------------- |
+| 控制频率   | 16.7 Hz               | **416.4 Hz** 🚀        | 官方远低于 RL 策略需求 (50~200Hz) |
+| 命令吞吐   | 200 cmd/s             | **1249 cmd/s** 🚀      | 本项目吞吐量**6.3 倍**            |
+| 丢包后行为 | 永久阻塞死锁 ✅       | 10ms 超时安全恢复 ✅   | 本项目 55 次丢包 0 次卡死         |
+| 平行扩展   | 1 条 CAN 串行 12 电机 | 4 条 CAN × 3 电机并行 | 处理器越弱优势越明显              |
 
 > 处理器性能越低，多线程并行架构的优势越显著。官方版在低端 CPU 上因单线程串行处理大量电机，加上 `recv` 无超时的死锁风险，几乎无法满足实时性要求。
 
 ## 硬件平台
 
-| 组件 | 说明 |
-|------|------|
-| 主控 | NVIDIA Jetson (Orin 系列) |
-| 电机 | RobStride 关节电机 × 12 |
-| 通信 | CAN 总线（4路 can0~can3） |
+
+| 组件 | 说明                                 |
+| ---- | ------------------------------------ |
+| 主控 | NVIDIA Jetson (Orin 系列)            |
+| 电机 | RobStride 关节电机 × 12             |
+| 通信 | CAN 总线（4路 can0~can3）            |
 | 关节 | 12 DOF（4腿 × 3关节：髋/大腿/小腿） |
-| IMU | hipnuc IMU |
-| 系统 | Ubuntu 22.04 + ROS2 Humble |
+| IMU  | hipnuc IMU                           |
+| 系统 | Ubuntu 22.04 + ROS2 Humble           |
 
 ## 快速开始
 
@@ -194,32 +237,33 @@ bash scripts/diagnose_controller.sh
 
 #### 键盘控制
 
-| 按键 | 功能 |
-|------|------|
-| **状态切换** |
-| `Num0` | 被动状态 → 站立 (GetUp) |
-| `Num9` | 站立 → 趴下 (GetDown) |
-| `Num5` | 小腿摆动 (CalfSwing) |
-| `Num6` | 爬墙动作 (ClimbWall) |
-| `Num7` | 过断桥动作 (Bridge) |
-| `Num8` | 蹲起 (Squat) |
-| `N` | 切换导航模式 (接收 `/cmd_vel`) |
-| **技能切换** |
-| `Num1` | RL Locomotion 1 (基础行走) |
-| `Num2` | RL Locomotion 2 |
-| `Num3` | RL Locomotion 3 |
-| `Num4` | RL Locomotion 4 |
-| **移动控制** |
-| `W` | 前进 (x+) |
-| `S` | 后退 (x-) |
-| `A` | 左移 (y+) |
-| `D` | 右移 (y-) |
-| `Q` | 左转 (yaw+) |
-| `E` | 右转 (yaw-) |
-| `Space` | 重置移动命令为零 |
-| **电机** |
-| `P` | 切换到被动模式 (kp=0, kd=8) |
-| `R` | 仿真中重置机器人 |
+
+| 按键         | 功能                          |
+| ------------ | ----------------------------- |
+| **状态切换** |                               |
+| `Num0`       | 被动状态 → 站立 (GetUp)      |
+| `Num9`       | 站立 → 趴下 (GetDown)        |
+| `Num5`       | 小腿摆动 (CalfSwing)          |
+| `Num6`       | 爬墙动作 (ClimbWall)          |
+| `Num7`       | 过断桥动作 (Bridge)           |
+| `Num8`       | 蹲起 (Squat)                  |
+| `N`          | 切换导航模式 (接收`/cmd_vel`) |
+| **技能切换** |                               |
+| `Num1`       | RL Locomotion 1 (基础行走)    |
+| `Num2`       | RL Locomotion 2               |
+| `Num3`       | RL Locomotion 3               |
+| `Num4`       | RL Locomotion 4               |
+| **移动控制** |                               |
+| `W`          | 前进 (x+)                     |
+| `S`          | 后退 (x-)                     |
+| `A`          | 左移 (y+)                     |
+| `D`          | 右移 (y-)                     |
+| `Q`          | 左转 (yaw+)                   |
+| `E`          | 右转 (yaw-)                   |
+| `Space`      | 重置移动命令为零              |
+| **电机**     |                               |
+| `P`          | 切换到被动模式 (kp=0, kd=8)   |
+| `R`          | 仿真中重置机器人              |
 
 #### 手柄控制 (标准映射)
 
@@ -230,30 +274,32 @@ sudo apt install ros-humble-joy
 ros2 run joy joy_node
 ```
 
-| 手柄操作 | 功能 |
-|---------|------|
-| **状态切换** |
-| `A` | 站立 (GetUp) |
-| `B` | 趴下 (GetDown) |
-| `X` | 切换导航模式 |
-| **技能切换** |
-| `RB + D-Pad 上` | RL Locomotion 1 (基础行走) |
-| `RB + D-Pad 下` | RL Locomotion 2 |
-| `RB + D-Pad 左` | RL Locomotion 3 |
-| `RB + D-Pad 右` | RL Locomotion 4 |
-| `RT + D-Pad 上` | 爬墙 (ClimbWall) |
-| `RT + D-Pad 下` | 过断桥 (Bridge) |
-| **电机控制** |
-| `LB + A` | 电机使能 (执行 fix.sh) |
-| `LB + B` | 电机断电 (执行 robstride_off.sh) |
-| `LB + X` | 被动模式 |
-| `LB + RB` | 紧急停止 |
-| **系统** |
-| `LT + B` | 关机 (执行 poweroff.sh) |
-| **移动控制** |
-| 左摇杆 Y (上下) | 前进/后退 |
-| 左摇杆 X (左右) | 左移/右移 |
-| 右摇杆 X (左右) | 左转/右转 |
+
+| 手柄操作        | 功能                             |
+| --------------- | -------------------------------- |
+| **状态切换**    |                                  |
+| `A`             | 站立 (GetUp)                     |
+| `B`             | 趴下 (GetDown)                   |
+| `X`             | 切换导航模式                     |
+| **技能切换**    |                                  |
+| `RB + D-Pad 上` | RL Locomotion 1 (基础行走)       |
+| `RB + D-Pad 下` | RL Locomotion 2                  |
+| `RB + D-Pad 左` | RL Locomotion 3                  |
+| `RB + D-Pad 右` | RL Locomotion 4                  |
+| `RT + D-Pad 上` | 爬墙 (ClimbWall)                 |
+| `RT + D-Pad 下` | 过断桥 (Bridge)                  |
+| **电机控制**    |                                  |
+| `LB + A`        | 电机使能 (执行 fix.sh)           |
+| `LB + B`        | 电机断电 (执行 robstride_off.sh) |
+| `LB + X`        | 被动模式                         |
+| `LB + RB`       | 紧急停止                         |
+| **系统**        |                                  |
+| `LT + B`        | 关机 (执行 poweroff.sh)          |
+| **移动控制**    |                                  |
+| 左摇杆 Y (上下) | 前进/后退                        |
+| 左摇杆 X (左右) | 左移/右移                        |
+| 右摇杆 X (左右) | 左转/右转                        |
+
 ```
 
 ## 预训练策略
@@ -272,6 +318,7 @@ ros2 run joy joy_node
 ## 项目目录
 
 ```
+
 fzsd2026/
 ├── src/
 │   ├── rl_sar/                    # 核心框架（精简版）
@@ -288,6 +335,7 @@ fzsd2026/
 ├── build.sh                       # 构建脚本
 ├── setup.sh                       # CAN 配置脚本
 └── 额外依赖.md
+
 ```
 
 ## 许可证
@@ -412,35 +460,36 @@ ros2 run web_video_server web_video_server
 
 ### 使用手柄或键盘控制
 
-|手柄控制|键盘控制|功能描述|
-|---|---|---|
-|**基础**|||
-|A|Num0|让机器人从程序开始运行时的姿态以位控插值运动到`base.yaml`中定义的`default_dof_pos`|
-|B|Num9|让机器人从当前位置以位控插值运动到程序开始运行时的姿态|
-|X|N|切换导航模式 (导航模式屏蔽速度命令，接收`cmd_vel`话题)|
-|Y|N/A|N/A|
-|**仿真**|||
-|RB+Y|R|重置Gazebo环境 (让摔倒的机器人站起来)|
-|RB+X|Enter|切换Gazebo运行/停止 (默认为运行状态)|
-|**电机**|||
-|LB+A|M|N/A (推荐设置为电机使能)|
-|LB+B|K|N/A (推荐设置为电机失能)|
-|LB+X|P|电机Passive模式 (`kp=0, kd=8`)|
-|LB+RB|N/A|N/A (推荐设置为急停保护)|
-|**技能**|||
-|RB+DPadUp|Num1|基础Locomotion|
-|RB+DPadDown|Num2|技能2|
-|RB+DPadLeft|Num3|技能3|
-|RB+DPadRight|Num4|技能4|
-|LB+DPadUp|Num5|技能5|
-|LB+DPadDown|Num6|技能6|
-|LB+DPadLeft|Num7|技能7|
-|LB+DPadRight|Num8|技能8|
-|**移动**|||
-|LY轴|W/S|前后移动 (X轴)|
-|LX轴|A/D|左右移动 (Y轴)|
-|RX轴|Q/E|偏航旋转 (Yaw)|
-|N/A(松开摇杆)|Space|将所有控制指令设置为零|
+
+| 手柄控制      | 键盘控制 | 功能描述                                                                           |
+| ------------- | -------- | ---------------------------------------------------------------------------------- |
+| **基础**      |          |                                                                                    |
+| A             | Num0     | 让机器人从程序开始运行时的姿态以位控插值运动到`base.yaml`中定义的`default_dof_pos` |
+| B             | Num9     | 让机器人从当前位置以位控插值运动到程序开始运行时的姿态                             |
+| X             | N        | 切换导航模式 (导航模式屏蔽速度命令，接收`cmd_vel`话题)                             |
+| Y             | N/A      | N/A                                                                                |
+| **仿真**      |          |                                                                                    |
+| RB+Y          | R        | 重置Gazebo环境 (让摔倒的机器人站起来)                                              |
+| RB+X          | Enter    | 切换Gazebo运行/停止 (默认为运行状态)                                               |
+| **电机**      |          |                                                                                    |
+| LB+A          | M        | N/A (推荐设置为电机使能)                                                           |
+| LB+B          | K        | N/A (推荐设置为电机失能)                                                           |
+| LB+X          | P        | 电机Passive模式 (`kp=0, kd=8`)                                                     |
+| LB+RB         | N/A      | N/A (推荐设置为急停保护)                                                           |
+| **技能**      |          |                                                                                    |
+| RB+DPadUp     | Num1     | 基础Locomotion                                                                     |
+| RB+DPadDown   | Num2     | 技能2                                                                              |
+| RB+DPadLeft   | Num3     | 技能3                                                                              |
+| RB+DPadRight  | Num4     | 技能4                                                                              |
+| LB+DPadUp     | Num5     | 技能5                                                                              |
+| LB+DPadDown   | Num6     | 技能6                                                                              |
+| LB+DPadLeft   | Num7     | 技能7                                                                              |
+| LB+DPadRight  | Num8     | 技能8                                                                              |
+| **移动**      |          |                                                                                    |
+| LY轴          | W/S      | 前后移动 (X轴)                                                                     |
+| LX轴          | A/D      | 左右移动 (Y轴)                                                                     |
+| RX轴          | Q/E      | 偏航旋转 (Yaw)                                                                     |
+| N/A(松开摇杆) | Space    | 将所有控制指令设置为零                                                             |
 
 ### 真实机器人
 
@@ -619,8 +668,7 @@ Lite3通过无线网络进行连接。
 (由于一些型号的Lite3没有开放网线接口，需要额外安装，所以有线连接方式暂时没有进行测试)
 
 - 连接Lite3的Wifi，并测试通信状况。我们强烈建议在运行本项目之前，先通过 [Lite3_Motion_SDK](https://github.com/DeepRoboticsLab/Lite3_MotionSDK)进行测试和检查，在确认一切正常后再运行。
- **(注意：无线连接可能会出现丢包断联甚至失控，请注意安全)**
-
+  **(注意：无线连接可能会出现丢包断联甚至失控，请注意安全)**
 - 确认所使用Lite3的IP地址和本地端口与目标端口号码，并设置 **在 rl_sar/src/rl_real_lite3.cpp的行46-48**中.
 - 在Lite3的运动主机中设置 **jy_exe/conf/network.toml**，使其IP地址指向与Lite3同一网段的本机，建立基于UDP的双向通信.
 
@@ -653,13 +701,13 @@ ros2 run rl_sar rl_real_lite3
 1. 取消注释`rl_real_a1.hpp`中最上面的`#define CSV_LOGGER`，你也可以在仿真程序中修改对应部分采集仿真数据用来测试训练过程。
 2. 运行控制程序，程序会记录所有数据到`src/rl_sar/policy/<ROBOT>/motor.csv`。
 3. 停止控制程序，开始训练执行器网络。注意，下面的路径前均省略了`rl_sar/src/rl_sar/policy/`。
-    ```bash
-    rosrun rl_sar actuator_net.py --mode train --data a1/motor.csv --output a1/motor.pt
-    ```
+   ```bash
+   rosrun rl_sar actuator_net.py --mode train --data a1/motor.csv --output a1/motor.pt
+   ```
 4. 验证已经训练好的训练执行器网络。
-    ```bash
-    rosrun rl_sar actuator_net.py --mode play --data a1/motor.csv --output a1/motor.pt
-    ```
+   ```bash
+   rosrun rl_sar actuator_net.py --mode play --data a1/motor.csv --output a1/motor.pt
+   ```
 
 ## 添加你的机器人
 

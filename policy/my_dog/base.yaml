@@ -72,3 +72,24 @@ my_dog:
   ]
 
   bridge_loop: false
+
+  # ==========================================
+  # RC 遥控器 (ET08A W.BUS, 仿真可开启测试)
+  # ==========================================
+  # 默认关闭 (false), 设为 true 启用 RC 串口输入
+  rc_enabled: true
+  rc_port: "/dev/ttyUSB0"
+  rc_baud: 100000
+
+  # 通道映射 (0-based, CH1=0, CH2=1, ...)
+  # 摇杆: CH1=yaw, CH2=x, CH4=y
+  # 开关: CH5=SA, CH6=SB, CH7=SC
+  # 旋钮: CH8=RD (连续值 0~1)
+  rc_ch_roll: 0       # CH1 → yaw 轴
+  rc_ch_pitch: 1      # CH2 → x 轴 (前进/后退)
+  rc_ch_throttle: 2   # CH3 → 保留
+  rc_ch_yaw: 3        # CH4 → y 轴 (左右)
+  rc_ch_sa: 4         # CH5 → SA 开关
+  rc_ch_sb: 5         # CH6 → SB 开关
+  rc_ch_sc: 6         # CH7 → SC 开关
+  rc_ch_rd: 7         # CH8 → RD 旋钮
